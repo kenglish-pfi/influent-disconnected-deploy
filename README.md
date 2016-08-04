@@ -4,6 +4,7 @@ Deployment scripts and a release of Inlfuent 2.0
 This is a copy-deploy of Influent 2.0 that has been tested on CentOs 6.5 on a disconnected system and scripts to support replacing the financial data.
 
 Steps to use:
+
 1. Make sure pre-requisites are installed on CentOs:
   * MySQL
   * Maven
