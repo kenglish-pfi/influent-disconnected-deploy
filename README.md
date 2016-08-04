@@ -5,8 +5,8 @@ This is a copy-deploy of Influent 2.0 that has been tested on CentOs 6.5 on a di
 
 Steps to use:
 1. Make sure pre-requisites are installed on CentOs:
-  a.  MySQL
-  b.  Maven
+  *. MySQL
+  *. Maven
     
 2. Create the directory  
     /usr/local/Influent  
