@@ -1,218 +1,218 @@
-USE aml;
+use aml;
 
--- FinFlowDaily is the primary source data table of the application 
--- (not FinFlow).  FinFlow is derived from FinFlowDaily and is
--- an over-all summary of FinFlowDaily
-insert into FinFlowDaily
- SELECT `debit_account`, 'A', `beneficiary_account`, 'A', SUM(`amount_usd`), DATE(`dt`)
-	FROM transactions
-	group by `debit_account`, `beneficiary_account`, DATE(`dt`);
+-- finflowdaily is the primary source data table of the application 
+-- (not finflow).  finflow is derived from finflowdaily and is
+-- an over-all summary of finflowdaily
+insert into finflowdaily
+ select `debit_account`, 'a', `beneficiary_account`, 'a', sum(`amount_usd`), date(`dt`)
+	from transactions
+	group by `debit_account`, `beneficiary_account`, date(`dt`);
 
-insert into FinEntity (
-    EntityId, 
-    InboundDegree, 
-    UniqueInboundDegree, 
-    OutboundDegree, 
-    UniqueOutboundDegree, 
-    NumTransactions, 
-    MaxTransaction, 
-    AvgTransaction, 
-    StartDate, 
-    EndDate,
-    -- From accounts:
-    Label,
-    AccountType,
-    AccountClass,
-    DateOpened,
-    Status,
-    PowerOfAttorney,
-    InitDate,
-    CustomerType,
-    CustomerStreet,
-    CustomerCity,
-    CustomerState,
-    CustomerCountry,
-    CustomerZip,
-    CustomerPhoneHome,
-    CustomerPhoneOffice    )
-Select
-    EntityId, 
-    sum(InboundDegree) as InboundDegree, 
-    sum(UniqueInboundDegree) as UniqueInboundDegree, 
-    sum(OutboundDegree) as OutboundDegree, 
-    sum(UniqueOutboundDegree) as UniqueOutboundDegree, 
-    sum(numTransactions) as NumTransactions, 
-    max(MaxTransaction) as MaxTransactions, 
-    sum(TotalTransactions) / sum(numTransactions) as AvgTransactions, 
-    min(StartDate) as StartDate, 
-    max(EndDate) as EndDate,
-    max(A.customer_name) as Label,                                   
-    max(A.account_type) as AccountType,
-    max(A.account_class) as AccountClass,
-    max(A.date_opened) as DateOpened,
-    max(A.status) as Status,
-    max(A.power_of_attorney) as PowerOfAttorney,           
-    max(A.init_date) as InitDate,
-    max(A.customer_type) as CustomerType,
-    max(A.customer_street) as CustomerStreet,
-    max(A.customer_city) as CustomerCity,
-    max(A.customer_state) as CustomerState,
-    max(A.customer_country) as CustomerCountry,
-    max(A.customer_zip) as CustomerZip,            
-    max(A.customer_phone_home) as CustomerPhoneHome,
-    max(A.customer_phone_office) as CustomerPhoneOffice
-From (
-    select  `beneficiary_account` as EntityId,
-            count(`debit_account`) as InboundDegree,
-            count( distinct `debit_account` ) as UniqueInboundDegree,
-            0 as OutboundDegree,
-            0 as UniqueOutboundDegree,
-            count(`beneficiary_account`) as numTransactions,
-            max(`amount_usd`) as MaxTransaction,
-            sum(`amount_usd`) as TotalTransactions,
-            min(`dt`) as StartDate,
-            max(`dt`) as EndDate
+insert into finentity (
+    entityid, 
+    inbounddegree, 
+    uniqueinbounddegree, 
+    outbounddegree, 
+    uniqueoutbounddegree, 
+    numtransactions, 
+    maxtransaction, 
+    avgtransaction, 
+    startdate, 
+    enddate,
+    -- from accounts:
+    label,
+    accounttype,
+    accountclass,
+    dateopened,
+    status,
+    powerofattorney,
+    initdate,
+    customertype,
+    customerstreet,
+    customercity,
+    customerstate,
+    customercountry,
+    customerzip,
+    customerphonehome,
+    customerphoneoffice    )
+select
+    entityid, 
+    sum(inbounddegree) as inbounddegree, 
+    sum(uniqueinbounddegree) as uniqueinbounddegree, 
+    sum(outbounddegree) as outbounddegree, 
+    sum(uniqueoutbounddegree) as uniqueoutbounddegree, 
+    sum(numtransactions) as numtransactions, 
+    max(maxtransaction) as maxtransactions, 
+    sum(totaltransactions) / sum(numtransactions) as avgtransactions, 
+    min(startdate) as startdate, 
+    max(enddate) as enddate,
+    max(a.customer_name) as label,                                   
+    max(a.account_type) as accounttype,
+    max(a.account_class) as accountclass,
+    max(a.date_opened) as dateopened,
+    max(a.status) as status,
+    max(a.power_of_attorney) as powerofattorney,           
+    max(a.init_date) as initdate,
+    max(a.customer_type) as customertype,
+    max(a.customer_street) as customerstreet,
+    max(a.customer_city) as customercity,
+    max(a.customer_state) as customerstate,
+    max(a.customer_country) as customercountry,
+    max(a.customer_zip) as customerzip,            
+    max(a.customer_phone_home) as customerphonehome,
+    max(a.customer_phone_office) as customerphoneoffice
+from (
+    select  `beneficiary_account` as entityid,
+            count(`debit_account`) as inbounddegree,
+            count( distinct `debit_account` ) as uniqueinbounddegree,
+            0 as outbounddegree,
+            0 as uniqueoutbounddegree,
+            count(`beneficiary_account`) as numtransactions,
+            max(`amount_usd`) as maxtransaction,
+            sum(`amount_usd`) as totaltransactions,
+            min(`dt`) as startdate,
+            max(`dt`) as enddate
     from transactions 
     group by `beneficiary_account`
-    UNION ALL
-    select `debit_account` as EntityId,
-            0 as InboundDegree,
-            0 as UniqueInboundDegree,
-            count(`beneficiary_account`) as OutboundDegree,
-            count( distinct `beneficiary_account` ) as UniqueOutboundDegree,
-            sum( case when `debit_account` <> `beneficiary_account` then 1 else 0 end ) as numTransactions,
-            max(`amount_usd`) as MaxTransaction,
-            sum(`amount_usd`) as TotalTransactions,
-            min(`dt`) as StartDate,
-            max(`dt`) as EndDate
+    union all
+    select `debit_account` as entityid,
+            0 as inbounddegree,
+            0 as uniqueinbounddegree,
+            count(`beneficiary_account`) as outbounddegree,
+            count( distinct `beneficiary_account` ) as uniqueoutbounddegree,
+            sum( case when `debit_account` <> `beneficiary_account` then 1 else 0 end ) as numtransactions,
+            max(`amount_usd`) as maxtransaction,
+            sum(`amount_usd`) as totaltransactions,
+            min(`dt`) as startdate,
+            max(`dt`) as enddate
     from transactions
     group by `debit_account`
 )q
-inner join accounts A 
-    on q.`EntityId` = A.`id`
-group by EntityId;
+inner join accounts a 
+    on q.`entityid` = a.`id`
+group by entityid;
 
-insert into FinFlowWeekly
- select FromEntityId, FromEntityType, ToEntityId, ToEntityType, sum(Amount), DATE_ADD(DATE(PeriodDate), INTERVAL ((1) - DAYOFWEEK(DATE(PeriodDate)) - 6 ) DAY)
-  from FinFlowDaily
-  group by FromEntityId, FromEntityType, ToEntityId, ToEntityType, DATE_ADD(DATE(PeriodDate), INTERVAL ((1) - DAYOFWEEK(DATE(PeriodDate)) - 6 ) DAY);
+insert into finflowweekly
+ select fromentityid, fromentitytype, toentityid, toentitytype, sum(amount), date_add(date(perioddate), interval ((1) - dayofweek(date(perioddate)) - 6 ) day)
+  from finflowdaily
+  group by fromentityid, fromentitytype, toentityid, toentitytype, date_add(date(perioddate), interval ((1) - dayofweek(date(perioddate)) - 6 ) day);
 
-insert into FinFlowMonthly
- select FromEntityId, FromEntityType, ToEntityId, ToEntityType, sum(Amount), CONCAT(CONCAT(CONCAT(convert(YEAR(DATE(PeriodDate)),char(4)),'/'),convert(MONTH(DATE(PeriodDate)),char(2))),'/01')
-  from FinFlowDaily
-  group by FromEntityId, FromEntityType, ToEntityId, ToEntityType, CONCAT(CONCAT(CONCAT(convert(YEAR(DATE(PeriodDate)),char(4)),'/'),convert(MONTH(DATE(PeriodDate)),char(2))),'/01');
+insert into finflowmonthly
+ select fromentityid, fromentitytype, toentityid, toentitytype, sum(amount), concat(concat(concat(convert(year(date(perioddate)),char(4)),'/'),convert(month(date(perioddate)),char(2))),'/01')
+  from finflowdaily
+  group by fromentityid, fromentitytype, toentityid, toentitytype, concat(concat(concat(convert(year(date(perioddate)),char(4)),'/'),convert(month(date(perioddate)),char(2))),'/01');
 
-insert into FinFlowQuarterly
- select FromEntityId, FromEntityType, ToEntityId, ToEntityType, sum(Amount), CONCAT(CONCAT(CONCAT(convert(YEAR(DATE(PeriodDate)),char(4)),'/'),case when QUARTER(DATE(PeriodDate))=1 then '01' when QUARTER(DATE(PeriodDate))=2 then '04' when QUARTER(DATE(PeriodDate))=3 then '07' when QUARTER(DATE(PeriodDate))=4 then '010' end),'/01')
-  from FinFlowMonthly
-  group by FromEntityId, FromEntityType, ToEntityId, ToEntityType, CONCAT(CONCAT(CONCAT(convert(YEAR(DATE(PeriodDate)),char(4)),'/'),case when QUARTER(DATE(PeriodDate))=1 then '01' when QUARTER(DATE(PeriodDate))=2 then '04' when QUARTER(DATE(PeriodDate))=3 then '07' when QUARTER(DATE(PeriodDate))=4 then '010' end),'/01');
+insert into finflowquarterly
+ select fromentityid, fromentitytype, toentityid, toentitytype, sum(amount), concat(concat(concat(convert(year(date(perioddate)),char(4)),'/'),case when quarter(date(perioddate))=1 then '01' when quarter(date(perioddate))=2 then '04' when quarter(date(perioddate))=3 then '07' when quarter(date(perioddate))=4 then '010' end),'/01')
+  from finflowmonthly
+  group by fromentityid, fromentitytype, toentityid, toentitytype, concat(concat(concat(convert(year(date(perioddate)),char(4)),'/'),case when quarter(date(perioddate))=1 then '01' when quarter(date(perioddate))=2 then '04' when quarter(date(perioddate))=3 then '07' when quarter(date(perioddate))=4 then '010' end),'/01');
 
-insert into FinFlowYearly
- select FromEntityId, FromEntityType, ToEntityId, ToEntityType, sum(Amount), CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/01/01')
-  from FinFlowMonthly
-  group by FromEntityId, FromEntityType, ToEntityId, ToEntityType, CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/01/01');
+insert into finflowyearly
+ select fromentityid, fromentitytype, toentityid, toentitytype, sum(amount), concat(convert(year( date(perioddate)),char(4)),'/01/01')
+  from finflowmonthly
+  group by fromentityid, fromentitytype, toentityid, toentitytype, concat(convert(year( date(perioddate)),char(4)),'/01/01');
 
-insert into FinFlow
- select FromEntityId, FromEntityType, ToEntityId, ToEntityType, min(DATE(PeriodDate)), max(DATE(PeriodDate)), sum(Amount)
-  from FinFlowDaily
-  group by FromEntityId, FromEntityType, ToEntityId, ToEntityType;
+insert into finflow
+ select fromentityid, fromentitytype, toentityid, toentitytype, min(date(perioddate)), max(date(perioddate)), sum(amount)
+  from finflowdaily
+  group by fromentityid, fromentitytype, toentityid, toentitytype;
 
-create table temp_ids (Entity varchar(100));
-create index tids on temp_ids (Entity);
+create table temp_ids (entity varchar(100));
+create index tids on temp_ids (entity);
 
 insert into temp_ids
- select distinct FromEntityId
-  from FinFlowYearly
+ select distinct fromentityid
+  from finflowyearly
  union
- select distinct ToEntityId
-  from FinFlowYearly;
+ select distinct toentityid
+  from finflowyearly;
 
-insert into FinEntityDaily select Entity, DATE(PeriodDate),
-       sum(case when ToEntityId = Entity and FromEntityType = 'A' then Amount else 0 end),
-       sum(case when ToEntityId = Entity and FromEntityType = 'A' then 1 else 0 end), -- calculate inbound degree
-       sum(case when FromEntityId = Entity and ToEntityType = 'A' then Amount else 0 end),
-       sum(case when FromEntityId = Entity and ToEntityType = 'A' then 1 else 0 end), -- calculate outbound degree
-       0 -- TODO calculate balance
+insert into finentitydaily select entity, date(perioddate),
+       sum(case when toentityid = entity and fromentitytype = 'a' then amount else 0 end),
+       sum(case when toentityid = entity and fromentitytype = 'a' then 1 else 0 end), -- calculate inbound degree
+       sum(case when fromentityid = entity and toentitytype = 'a' then amount else 0 end),
+       sum(case when fromentityid = entity and toentitytype = 'a' then 1 else 0 end), -- calculate outbound degree
+       0 -- todo calculate balance
  from temp_ids
- join FinFlowDaily on FromEntityId = Entity or ToEntityId = Entity
- group by Entity, DATE(PeriodDate);
+ join finflowdaily on fromentityid = entity or toentityid = entity
+ group by entity, date(perioddate);
 
 -- cleanup
 drop table temp_ids;
 
-insert into FinEntityWeekly
- select EntityId, DATE_ADD(DATE(PeriodDate), INTERVAL ((1) - DAYOFWEEK(DATE(PeriodDate)) - 6 ) DAY), sum(InboundAmount), sum(InboundDegree), sum(OutboundAmount), sum(OutboundDegree), 0
-  from FinEntityDaily
-  group by EntityId, DATE_ADD(DATE(PeriodDate), INTERVAL ((1) - DAYOFWEEK(DATE(PeriodDate)) - 6 ) DAY);
+insert into finentityweekly
+ select entityid, date_add(date(perioddate), interval ((1) - dayofweek(date(perioddate)) - 6 ) day), sum(inboundamount), sum(inbounddegree), sum(outboundamount), sum(outbounddegree), 0
+  from finentitydaily
+  group by entityid, date_add(date(perioddate), interval ((1) - dayofweek(date(perioddate)) - 6 ) day);
 
-insert into FinEntityMonthly
- select EntityId,  CONCAT(CONCAT(CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/'),convert(MONTH(DATE(PeriodDate)),char(2))),'/01'), sum(InboundAmount), sum(InboundDegree), sum(OutboundAmount), sum(OutboundDegree), 0
-  from FinEntityDaily
-  group by EntityId, CONCAT(CONCAT(CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/'),convert(MONTH(DATE(PeriodDate)),char(2))),'/01');
+insert into finentitymonthly
+ select entityid,  concat(concat(concat(convert(year( date(perioddate)),char(4)),'/'),convert(month(date(perioddate)),char(2))),'/01'), sum(inboundamount), sum(inbounddegree), sum(outboundamount), sum(outbounddegree), 0
+  from finentitydaily
+  group by entityid, concat(concat(concat(convert(year( date(perioddate)),char(4)),'/'),convert(month(date(perioddate)),char(2))),'/01');
 
-insert into FinEntityQuarterly
- select EntityId, CONCAT(CONCAT(CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/'),case when QUARTER(DATE(PeriodDate))=1 then '01' when QUARTER(DATE(PeriodDate))=2 then '04' when QUARTER(DATE(PeriodDate))=3 then '07' when QUARTER(DATE(PeriodDate))=4 then '010' end),'/01'), sum(InboundAmount), sum(InboundDegree), sum(OutboundAmount), sum(OutboundDegree), 0
-  from FinEntityMonthly
-  group by EntityId, CONCAT(CONCAT(CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/'),case when QUARTER(DATE(PeriodDate))=1 then '01' when QUARTER(DATE(PeriodDate))=2 then '04' when QUARTER(DATE(PeriodDate))=3 then '07' when QUARTER(DATE(PeriodDate))=4 then '010' end),'/01');
+insert into finentityquarterly
+ select entityid, concat(concat(concat(convert(year( date(perioddate)),char(4)),'/'),case when quarter(date(perioddate))=1 then '01' when quarter(date(perioddate))=2 then '04' when quarter(date(perioddate))=3 then '07' when quarter(date(perioddate))=4 then '010' end),'/01'), sum(inboundamount), sum(inbounddegree), sum(outboundamount), sum(outbounddegree), 0
+  from finentitymonthly
+  group by entityid, concat(concat(concat(convert(year( date(perioddate)),char(4)),'/'),case when quarter(date(perioddate))=1 then '01' when quarter(date(perioddate))=2 then '04' when quarter(date(perioddate))=3 then '07' when quarter(date(perioddate))=4 then '010' end),'/01');
 
-insert into FinEntityYearly
- select EntityId, CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/01/01'), sum(InboundAmount), sum(InboundDegree), sum(OutboundAmount), sum(OutboundDegree), 0
-  from FinEntityQuarterly
-  group by EntityId, CONCAT(convert(YEAR( DATE(PeriodDate)),char(4)),'/01/01');
+insert into finentityyearly
+ select entityid, concat(convert(year( date(perioddate)),char(4)),'/01/01'), sum(inboundamount), sum(inbounddegree), sum(outboundamount), sum(outbounddegree), 0
+  from finentityquarterly
+  group by entityid, concat(convert(year( date(perioddate)),char(4)),'/01/01');
 
-insert into DataSummary (SummaryOrder, SummaryKey, SummaryLabel, SummaryValue, UnformattedNumeric, UnformattedDatetime)
+insert into datasummary (summaryorder, summarykey, summarylabel, summaryvalue, unformattednumeric, unformatteddatetime)
 values (
 	1,
-	'InfoSummary',
-	'About',
-	'Some interesting description of your dataset can be written here.',
-    NULL,
-    NULL
+	'infosummary',
+	'about',
+	'some interesting description of your dataset can be written here.',
+    null,
+    null
 );
 
--- The following calculates the number of accounts in the data
-insert into DataSummary (SummaryOrder, SummaryKey, SummaryLabel, SummaryValue, UnformattedNumeric, UnformattedDatetime)
+-- the following calculates the number of accounts in the data
+insert into datasummary (summaryorder, summarykey, summarylabel, summaryvalue, unformattednumeric, unformatteddatetime)
 select 
 	2,
-	'NumAccounts',
-	'Accounts',
-	CAST(count(*) AS char(9)),
+	'numaccounts',
+	'accounts',
+	cast(count(*) as char(9)),
 	count(*),
-	NULL
-from FinEntity;
+	null
+from finentity;
 
--- The following calculates the number of transactions in the data
-insert into DataSummary (SummaryOrder, SummaryKey, SummaryLabel, SummaryValue, UnformattedNumeric, UnformattedDatetime)
+-- the following calculates the number of transactions in the data
+insert into datasummary (summaryorder, summarykey, summarylabel, summaryvalue, unformattednumeric, unformatteddatetime)
 select
 	3,
-	'NumTransactions',
-	'Transactions',
-	CAST(count(*) AS char(9)),
+	'numtransactions',
+	'transactions',
+	cast(count(*) as char(9)),
 	count(*),
-	NULL
+	null
 from transactions;
 
--- The following calculates the earliest transaction in the data
-insert into DataSummary (SummaryOrder, SummaryKey, SummaryLabel, SummaryValue, UnformattedNumeric, UnformattedDatetime)
+-- the following calculates the earliest transaction in the data
+insert into datasummary (summaryorder, summarykey, summarylabel, summaryvalue, unformattednumeric, unformatteddatetime)
 select
 	4,
-	'StartDate',
-	'Earliest Transaction',
-	CAST(MIN(firstTransaction) AS char(9)),
-	NULL,
-	MIN(firstTransaction)
-from FinFlow;
+	'startdate',
+	'earliest transaction',
+	cast(min(firsttransaction) as char(9)),
+	null,
+	min(firsttransaction)
+from finflow;
 
--- The following calculates the latest transaction in the data
-insert into DataSummary (SummaryOrder, SummaryKey, SummaryLabel, SummaryValue, UnformattedNumeric, UnformattedDatetime)
+-- the following calculates the latest transaction in the data
+insert into datasummary (summaryorder, summarykey, summarylabel, summaryvalue, unformattednumeric, unformatteddatetime)
 select
 	5,
-	'EndDate',
-	'Latest Transaction',
-	CAST(MAX(lastTransaction) AS char(9)),
-	NULL,
-	MAX(lastTransaction)
-from FinFlow;
+	'enddate',
+	'latest transaction',
+	cast(max(lasttransaction) as char(9)),
+	null,
+	max(lasttransaction)
+from finflow;
 
 
 
